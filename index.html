@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Transfid Cipher</title>
+  </head>
+  <body>
+    <h1>Transfid Cipher</h1>
+    <h2>Key</h2>
+    <p>Fill in all parts of the key before attempting to encrypt/decrypt.</p>
+    <h3>Part 1</h3>
+    <p>Grid 1</p>
+    <table id="grid1">
+      <tr>
+        <td><input value="a" /></td>
+        <td><input value="b" /></td>
+        <td><input value="c" /></td>
+      </tr>
+      <tr>
+        <td><input value="d" /></td>
+        <td><input value="e" /></td>
+        <td><input value="f" /></td>
+      </tr>
+      <tr>
+        <td><input value="g" /></td>
+        <td><input value="h" /></td>
+        <td><input value="i" /></td>
+      </tr>
+    </table>
+    <p>Grid 2</p>
+    <table id="grid2">
+      <tr>
+        <td><input value="j" /></td>
+        <td><input value="k" /></td>
+        <td><input value="l" /></td>
+      </tr>
+      <tr>
+        <td><input value="m" /></td>
+        <td><input value="n" /></td>
+        <td><input value="o" /></td>
+      </tr>
+      <tr>
+        <td><input value="p" /></td>
+        <td><input value="q" /></td>
+        <td><input value="r" /></td>
+      </tr>
+    </table>
+    <p>Grid 3</p>
+    <table id="grid3">
+      <tr>
+        <td><input value="s" /></td>
+        <td><input value="t" /></td>
+        <td><input value="u" /></td>
+      </tr>
+      <tr>
+        <td><input value="v" /></td>
+        <td><input value="w" /></td>
+        <td><input value="x" /></td>
+      </tr>
+      <tr>
+        <td><input value="y" /></td>
+        <td><input value="z" /></td>
+        <td><input value="+" /></td>
+      </tr>
+    </table>
+    <h3>Part 2</h3>
+    <p>Enter the cycles of the permutations.</p>
+    <p>Permutation 1: <input id="permutation1" placeholder="(1 2 3 4)" value="(1 2 3 4)" /></p>
+    <p>Permutation 2: <input id="permutation2" value="(1 2 3 4)" /></p>
+    <p>Permutation 3: <input id="permutation3" value="(1 2 3 4)" /></p>
+    <h3>Part 3</h3>
+    <p>Caesar Shift Number: <input id="caesarnum" value="0" /></p>
+    <h2>Encrypt/Decrypt</h2>
+    <p><input id="input" placeholder="Plaintext OR Ciphertext" /></p>
+    <p>
+      <select id="version">
+        <option value="v1.0.1">v1.0.1 (more secure)</option>
+        <option value="v1">v1 (no padding)</option>
+      </select>
+    </p>
+    <p><button id="enbutton">Encrypt</button> <button id="debutton">Decrypt</button></p>
+    <h2>Output</h2>
+    <p id="output">Encrypt or decrypt something.</p>
+    <script>
+    function getKey() {
+      let egrid = {};
+      let dgrid = {};
+      [document.getElementById("grid1"), document.getElementById("grid2"), document.getElementById("grid3")].forEach((grid, i1) => {
+        grid.querySelectorAll("tr").forEach((row, i2) => {
+          row.querySelectorAll("input").forEach((input, i3) => {
+            if (input && input.value) {
+              let char = input.value.toUpperCase();
+              let loc = `${i1+1}${i2+1}${i3+1}`;
+              egrid[char] = loc;
+              dgrid[loc] = char;
+            }
+          });
+        });
+      });
+
+      let permutations = [];
+      [document.getElementById("permutation1"), document.getElementById("permutation2"), document.getElementById("permutation3")].forEach((perm, i) => {
+        let parts = perm.value.split(")");
+        let permutation = [];
+        parts.forEach((part) => {
+          let cycle = [];
+          let regex = /(1|2|3|4)/g;
+          let array = part.match(regex);
+          if (array) {
+            array.forEach((result) => {
+              cycle.push(parseInt(result));
+            });
+          }
+          if (cycle.length > 0) {
+            permutation.push(cycle);
+          }
+        });
+        permutations[i] = permutation;
+      });
+
+      let caesarnum = parseInt(document.getElementById("caesarnum").value);
+
+      return [{encrypt: egrid, decrypt: dgrid}, permutations, caesarnum];
+    }
+
+    let alphabet = [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
+    window.addEventListener("load", (e) => {
+      document.getElementById("enbutton").addEventListener("click", (e) => {
+        let key = getKey();
+        let P = document.getElementById("input").value.toUpperCase();
+        let PP = P;
+        console.log(key);
+
+        let v = document.getElementById("version").value;
+        if (v === "v1.0.1") {
+          let pc = 4 - (P.length % 4);
+          for (var i = 0; i < pc; i++) {
+            PP += "X";
+          }
+        }
+
+        let step1 = [[], [], []];
+        for (var i = 0; i < PP.length; i++) {
+          let loc = key[0].encrypt[PP.charAt(i)];
+          step1[0].push(loc.charAt(0));
+          step1[1].push(loc.charAt(1));
+          step1[2].push(loc.charAt(2));
+        }
+        console.log(step1);
+
+        let step2 = step1.map((row, index) => {
+          let newRow = [];
+          for (var i = 0; i < 4 * (Math.floor(row.length / 4) + 1); i += 4) {
+            if (i < (4 * Math.floor(row.length / 4))) {
+              for (var j = 0; j < 4; j++) {
+                let cycle = key[1][index].find((cycle) => {
+                  return cycle.includes(j + 1);
+                });
+                newRow.push(row[i + cycle[(cycle.indexOf(j + 1) + cycle.length - 1) % cycle.length] - 1]);
+              }
+            } else {
+              for (var j = i; j < row.length; j++) {
+                newRow.push(row[j]);
+              }
+            }
+          }
+          return newRow;
+        });
+        console.log(step2);
+
+        let step3 = "";
+        for (var i = 0; i < 7 * (Math.floor(step2[0].length / 7) + 1); i += 7) {
+          let triplets = step2[0].slice(i, i + 7).concat(step2[1].slice(i, i + 7)).concat(step2[2].slice(i, i + 7));
+          for (var j = 0; j < triplets.length; j += 3) {
+            let loc = `${triplets[j]}${triplets[j+1]}${triplets[j+2]}`;
+            step3 += key[0].decrypt[loc];
+          }
+        }
+        console.log(step3);
+
+        let ciphertext = "";
+        for (var i = 0; i < step3.length; i++) {
+          ciphertext += alphabet[(alphabet.indexOf(step3.charAt(i)) + key[2]) % alphabet.length] || "+";
+        }
+
+        let output = document.getElementById("output");
+        output.innerText = ciphertext;
+      });
+      document.getElementById("debutton").addEventListener("click", (e) => {
+        let key = getKey();
+        let C = document.getElementById("input").value.toUpperCase();
+        console.log(key);
+
+        let step1 = "";
+        for (var i = 0; i < C.length; i++) {
+          let index = alphabet.indexOf(C.charAt(i));
+          if (index !== -1) {
+            step1 += alphabet[(alphabet.indexOf(C.charAt(i)) + alphabet.length - key[2]) % alphabet.length]
+          } else {
+            step1 += "+";
+          }
+        }
+        console.log(step1);
+
+        let step2 = [];
+        for (var i = 0; i < 7 * (Math.floor(step1.length / 7) + 1); i += 7) {
+          let group = [];
+          for (var j = i; j < i + 7; j++) {
+            if (step1.length > j) {
+              let loc = key[0].encrypt[step1.charAt(j)];
+              group.push(loc.charAt(0));
+              group.push(loc.charAt(1));
+              group.push(loc.charAt(2));
+            }
+          }
+          step2.push(group);
+        }
+        console.log(step2);
+
+        let step3 = [[], [], []];
+        step2.forEach((group) => {
+          for (var i = 1; i <= 3; i++) {
+            for (var j = (i - 1) * (group.length / 3); j < i * (group.length / 3); j++) {
+              step3[i - 1].push(group[j]);
+            }
+          }
+        });
+        console.log(step3);
+
+        let step4 = step3.map((row, index) => {
+          let newRow = [];
+          for (var i = 0; i < 4 * (Math.floor(row.length / 4) + 1); i += 4) {
+            if (i < (4 * Math.floor(row.length / 4))) {
+              for (var j = 0; j < 4; j++) {
+                let cycle = key[1][index].find((cycle) => {
+                  return cycle.includes(j + 1);
+                });
+                newRow.push(row[i + cycle[(cycle.indexOf(j + 1) + cycle.length + 1) % cycle.length] - 1]);
+              }
+            } else {
+              for (var j = i; j < row.length; j++) {
+                newRow.push(row[j]);
+              }
+            }
+          }
+          return newRow;
+        });
+        console.log(step4);
+
+        let P = "";
+        for (var i = 0; i < step4[0].length; i++) {
+          let loc = `${step4[0][i]}${step4[1][i]}${step4[2][i]}`;
+          P += (key[0].decrypt[loc]);
+        }
+
+        let output = document.getElementById("output");
+        output.innerText = P;
+      });
+    });
+    </script>
+  </body>
+</html>
